@@ -14,6 +14,14 @@ type MidiListener struct {
 	onNoteEnd       func(channel uint8, note uint8)
 }
 
+func ListInPorts() []string {
+	ports := []string{}
+	for _, port := range midi.GetInPorts() {
+		ports = append(ports, port.String())
+	}
+	return ports
+}
+
 func ListPorts() {
 	fmt.Printf("MIDI IN Ports\n")
 	fmt.Println(midi.GetInPorts())
@@ -27,7 +35,7 @@ func NewMidiListener(portName string) *MidiListener {
 
 	in, err := midi.FindInPort(portName)
 	if err != nil {
-		log.Fatalf("Cannot find MIDI In port matching %s\n", portName)
+		log.Fatalf("Cannot find MIDI In port matching \"%s\"\n", portName)
 	}
 	log.Printf("Opened MIDI In port %s\n", in.String())
 

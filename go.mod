@@ -5,6 +5,7 @@ go 1.22.1
 require (
 	fyne.io/fyne/v2 v2.4.4
 	github.com/Hundemeier/go-sacn/sacn v0.0.0-20221003163232-00e6fbef50ad
+	github.com/crazy3lf/colorconv v1.2.0
 	gitlab.com/gomidi/midi/v2 v2.1.7
 )
 

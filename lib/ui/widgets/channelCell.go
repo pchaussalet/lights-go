@@ -15,17 +15,17 @@ import (
 type ChannelCell struct {
 	widget.BaseWidget
 	Index *canvas.Text
-	Value *widget.Label
+	Value *canvas.Text
 	Color *canvas.Rectangle
 }
 
 func NewChannelCell(intensity color.Gray) *ChannelCell {
 	item := &ChannelCell{
 		Index: canvas.NewText("", color.Gray{128}),
-		Value: widget.NewLabel("0"),
+		Value: canvas.NewText("0", color.White),
 		Color: canvas.NewRectangle(intensity),
 	}
-	item.Color.Resize(fyne.NewSize(item.Color.Size().Width, 10))
+	item.Color.SetMinSize(fyne.NewSize(50, 5))
 	item.ExtendBaseWidget(item)
 
 	return item
@@ -36,20 +36,21 @@ func (item *ChannelCell) SetChannel(value int) {
 }
 
 func (item *ChannelCell) Bind(value binding.Int) {
-	item.Value.Bind(binding.IntToString(value))
 	value.AddListener(binding.NewDataListener(func() {
 		v, _ := value.Get()
 		item.Color.FillColor = color.Gray{uint8(v)}
+		item.Value.Text = strconv.Itoa(v)
+		item.Value.Refresh()
 	}))
 }
 
 func (item *ChannelCell) CreateRenderer() fyne.WidgetRenderer {
 	c := container.New(layout.NewPaddedLayout(), container.New(layout.NewVBoxLayout(),
 		item.Color,
-		container.New(layout.NewGridLayoutWithColumns(2),
-			container.New(layout.NewPaddedLayout(), item.Index),
-			container.New(layout.NewPaddedLayout(), item.Value),
-		),
+		// container.New(layout.NewGridLayoutWithColumns(2),
+		container.New(layout.NewPaddedLayout(), item.Index),
+		container.New(layout.NewPaddedLayout(), item.Value),
+		// ),
 	))
 	// c := container.New(layout.NewVBoxLayout(),
 	// 	item.Color,
