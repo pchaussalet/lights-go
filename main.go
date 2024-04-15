@@ -1,23 +1,31 @@
 package main
 
 import (
+	"log"
+	"os"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/pchaussalet/lights-go/lib/modes"
 	"github.com/rivo/tview"
 )
 
+type KeyHandler func(event *tcell.EventKey) *tcell.EventKey
+
 type AppState struct {
-	mode        modes.AppMode
 	main        *tview.Flex
 	header      *tview.TextView
 	commandLine *tview.TextView
-	keyHandler  func(event *tcell.EventKey) *tcell.EventKey
+	keyHandler  KeyHandler
+	modes       []*modes.Mode
 }
 
 func main() {
+	logFile, _ := os.Create("/tmp/lights_go.log")
+	log.Default().SetOutput(logFile)
+
 	header := tview.NewTextView().
 		SetTextAlign(tview.AlignCenter).
-		SetText("Header")
+		SetText("")
 	header.SetBorderPadding(1, 1, 1, 1)
 
 	main := tview.NewFlex()
@@ -33,11 +41,7 @@ func main() {
 		AddItem(main, 1, 0, 1, 1, 1, 0, false).
 		AddItem(commandLine, 2, 0, 1, 1, 0, 0, true)
 
-	state := AppState{
-		main:        main,
-		header:      header,
-		commandLine: commandLine,
-	}
+	state := NewState(main, header, commandLine, modes.LoadLive())
 
 	app := tview.NewApplication()
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -45,19 +49,18 @@ func main() {
 		case tcell.KeyESC:
 			if commandLine.GetText(true) != "" {
 				commandLine.SetText("")
+				if state.currentMode().Reset != nil {
+					state.currentMode().Reset()
+				}
+			} else if len(state.modes) > 1 {
+				state.exitMode()
 			}
 		default:
 			switch event.Rune() {
 			case 338:
 				app.Stop()
 			case ';':
-				state.enterMode(modes.LoadPatch())
-			// case 'Q', 'q':
-			// 	commandLine.SetText("cue")
-			// case 'R', 'r':
-			// 	commandLine.SetText("record")
-			// case '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'a', 'b', 'c', 'd', 'e', 'f', '#':
-			// 	commandLine.SetText(commandLine.GetText(true) + string(event.Rune()))
+				state.enterMode(modes.LoadPatch(), true)
 			default:
 				if state.keyHandler != nil {
 					state.keyHandler(event)
@@ -75,10 +78,43 @@ func main() {
 	}
 }
 
-func (item *AppState) enterMode(mode *modes.Mode) {
-	item.mode = mode.Mode
-	item.header.SetText(mode.Title)
-	item.main.Clear().AddItem(mode.Content, 0, 1, false)
-	item.main.SetBackgroundColor(mode.BackgroundColor)
-	item.keyHandler = mode.KeyHandler(item.commandLine)
+func NewState(main *tview.Flex, header, commandLine *tview.TextView, defaultMode *modes.Mode) *AppState {
+	state := AppState{
+		main:        main,
+		header:      header,
+		commandLine: commandLine,
+		modes:       []*modes.Mode{},
+	}
+	state.enterMode(defaultMode, true)
+	return &state
+}
+
+func (state *AppState) currentMode() *modes.Mode {
+	return state.modes[len(state.modes)-1]
+}
+
+func (state *AppState) exitMode() {
+	state.currentMode().Exit()
+	state.main.Clear()
+	state.modes = state.modes[:len(state.modes)-1]
+	state.enterMode(state.currentMode(), false)
+}
+
+func (state *AppState) enterMode(mode *modes.Mode, addToStack bool) {
+	if addToStack {
+		state.modes = append(state.modes, mode)
+	}
+	state.header.SetText(mode.Title)
+	if mode.Content != nil && mode.Content() != nil {
+		state.main.Clear().AddItem(mode.Content(), 0, 1, false)
+	}
+	state.main.SetBorderColor(mode.Color)
+	if mode.KeyHandler != nil {
+		state.keyHandler = mode.KeyHandler(state.commandLine)
+	} else {
+		state.keyHandler = nil
+	}
+	if mode.Refresh != nil {
+		mode.Refresh()
+	}
 }

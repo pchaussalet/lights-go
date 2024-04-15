@@ -14,8 +14,6 @@ func GetPatch() *Patch {
 	return &patch
 }
 
-func (item *Patch) AddDimmer(address int) (*Patch, *fixtures.Fixture) {
-	fixture := fixtures.NewFixture(address, fixtures.Dimmer)
-	patch.Fixtures = append(patch.Fixtures, fixture)
-	return item, fixture
+func (patch *Patch) AddFixture(address int, name string, subs ...fixtures.ChannelRole) {
+	patch.Fixtures = append(patch.Fixtures, fixtures.NewFixture(address, name, subs...))
 }

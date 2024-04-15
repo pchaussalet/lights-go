@@ -49,6 +49,7 @@ func (item *AppState) ToJSON() ([]byte, error) {
 	for _, fixture := range item.Fixtures {
 		encoded := []string{
 			strconv.Itoa(fixture.BaseAddress()),
+			fixture.Name(),
 		}
 		for _, role := range fixture.Roles() {
 			encoded = append(encoded, strconv.Itoa(role.EnumIndex()))
@@ -93,9 +94,10 @@ func loadFixtures(config []string) []*fixtures.Fixture {
 			log.Printf("Invalid address in fixture %v: %v", i, entry)
 			continue
 		}
+		name := parts[1]
 		channels := []fixtures.ChannelRole{}
 		isValid := true
-		for j := 1; j < len(parts); j++ {
+		for j := 2; j < len(parts); j++ {
 			offset, err := strconv.ParseInt(parts[j], 10, 32)
 			if err != nil {
 				log.Printf("Invalid offset %v in fixture %v: %v", j, i, entry)
@@ -105,7 +107,7 @@ func loadFixtures(config []string) []*fixtures.Fixture {
 			channels = append(channels, fixtures.ChannelRole(offset))
 		}
 		if isValid {
-			fixturesList = append(fixturesList, fixtures.NewFixture(int(address), channels...))
+			fixturesList = append(fixturesList, fixtures.NewFixture(int(address), name, channels...))
 		} else {
 			fixturesList = append(fixturesList, nil)
 		}

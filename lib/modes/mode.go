@@ -13,9 +13,12 @@ const (
 )
 
 type Mode struct {
-	Mode            AppMode
-	Title           string
-	BackgroundColor tcell.Color
-	Content         *tview.Box
-	KeyHandler      func(commandLine *tview.TextView) func(event *tcell.EventKey) *tcell.EventKey
+	Mode       AppMode
+	Title      string
+	Color      tcell.Color
+	KeyHandler func(commandLine *tview.TextView) func(event *tcell.EventKey) *tcell.EventKey
+	Reset      func()
+	Exit       func()
+	Content    func() *tview.Flex
+	Refresh    func()
 }

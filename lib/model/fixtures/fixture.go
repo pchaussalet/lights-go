@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"slices"
+	"strconv"
 
 	"fyne.io/fyne/v2/data/binding"
 )
@@ -13,9 +14,10 @@ type Fixture struct {
 	virtualDimmer binding.Int
 	color         binding.Bytes
 	colorChannels map[ChannelRole]FixtureChannel
+	name          string
 }
 
-func NewFixture(address int, channels ...ChannelRole) *Fixture {
+func NewFixture(address int, name string, channels ...ChannelRole) *Fixture {
 	fixtureChannels := []FixtureChannel{}
 	roleToAddress := map[ChannelRole]int{}
 	colorChannels := map[ChannelRole]FixtureChannel{}
@@ -59,6 +61,14 @@ func NewFixture(address int, channels ...ChannelRole) *Fixture {
 	fixture.virtualDimmer = virtualDimmer
 	fixture.color = color
 	fixture.colorChannels = colorChannels
+	if len(name) == 0 {
+		name = ""
+		for _, channel := range fixtureChannels {
+			name += channel.Role().String()[:1]
+		}
+		name += "_" + strconv.Itoa(address)
+	}
+	fixture.name = name
 
 	return &fixture
 }
@@ -73,6 +83,10 @@ func (item *Fixture) Bind(handler func()) {
 
 func (item *Fixture) BaseAddress() int {
 	return item.address
+}
+
+func (item *Fixture) Name() string {
+	return item.name
 }
 
 func (item *Fixture) Addresses(roles ...int) []int {
